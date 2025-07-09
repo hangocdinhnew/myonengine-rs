@@ -1,6 +1,7 @@
-[package]
-name = "myonengine"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "myoncore",
+    "myonsandbox",
+]
 
-[dependencies]
+resolver = "3"
