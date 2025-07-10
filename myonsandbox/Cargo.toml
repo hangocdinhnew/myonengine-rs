@@ -1,10 +1,11 @@
 [package]
 name = "myonsandbox"
 version = "0.1.0"
-edition = "2024"
+edition.workspace = true
+license.workspace = true
 
 [dependencies]
-anyhow = "1.0.98"
-myoncore = { path = "../myoncore" }
-tracing = "0.1.41"
-winit = "0.30.11"
+anyhow.workspace = true
+myoncore.workspace = true
+tracing.workspace = true
+winit.workspace = true

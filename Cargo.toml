@@ -3,5 +3,16 @@ members = [
     "myoncore",
     "myonsandbox",
 ]
-
 resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "BSD-3-Clause"
+
+[workspace.dependencies]
+myoncore = { path = "myoncore" }
+
+anyhow = "1.0.98"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["fmt", "env-filter"] }
+winit = "0.30.11"
