@@ -67,6 +67,8 @@ impl ApplicationHandler for Engine {
             .expect("Failed to create window");
 
         self.window = Some(Rc::new(window));
+
+        tracing::info!("Window created!");
     }
 
     fn window_event(
