@@ -26,7 +26,7 @@ impl EngineConfig {
             title,
             width,
             height,
-            resizable
+            resizable,
         }
     }
 }
@@ -37,25 +37,32 @@ impl Default for EngineConfig {
     }
 }
 
-pub struct Engine {
+pub trait AppHandler {
+    fn on_event(&mut self, event_loop: &ActiveEventLoop, event: &WindowEvent);
+    fn on_update(&mut self);
+}
+
+pub struct Engine<A: AppHandler> {
     config: Rc<EngineConfig>,
     logger: Rc<Logger>,
     window: Option<Rc<Window>>,
+    app: A,
 }
 
-impl Engine {
-    pub fn new(config: Rc<EngineConfig>) -> Self {
+impl<A: AppHandler> Engine<A> {
+    pub fn new(config: Rc<EngineConfig>, app: A) -> Self {
         let logger = Rc::new(Logger::new());
 
         Self {
             config,
             logger,
             window: None,
+            app,
         }
     }
 }
 
-impl ApplicationHandler for Engine {
+impl<A: AppHandler> ApplicationHandler for Engine<A> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window_attributes = WindowAttributes::default()
             .with_title(&self.config.title)
@@ -68,6 +75,8 @@ impl ApplicationHandler for Engine {
 
         self.window = Some(Rc::new(window));
 
+        self.app.on_update();
+
         tracing::info!("Window created!");
     }
 
@@ -77,24 +86,6 @@ impl ApplicationHandler for Engine {
         _id: winit::window::WindowId,
         event: WindowEvent,
     ) {
-        match event {
-            WindowEvent::CloseRequested => {
-                tracing::info!("Close requested.");
-                event_loop.exit();
-            }
-            WindowEvent::KeyboardInput {
-                event:
-                    KeyEvent {
-                        physical_key: PhysicalKey::Code(KeyCode::Escape),
-                        state: ElementState::Pressed,
-                        ..
-                    },
-                ..
-            } => {
-                tracing::info!("Escape pressed. Exiting.");
-                event_loop.exit();
-            }
-            _ => {}
-        }
+        self.app.on_event(event_loop, &event);
     }
 }
