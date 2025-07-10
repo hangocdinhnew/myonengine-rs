@@ -5,9 +5,9 @@ use winit::{
     event_loop::{ActiveEventLoop, EventLoop},
 };
 
-struct App;
+struct Sandbox;
 
-impl AppHandler for App {
+impl AppHandler for Sandbox {
     fn on_event(&mut self, event_loop: &ActiveEventLoop, event: &WindowEvent) {
         match event {
             WindowEvent::CloseRequested => {
@@ -29,7 +29,7 @@ fn main() -> anyhow::Result<()> {
         600,
         false,
     ));
-    let mut engine = Engine::new(Rc::clone(&engineconfig), App);
+    let mut engine = Engine::new(Rc::clone(&engineconfig), Sandbox);
     event_loop.run_app(&mut engine)?;
 
     Ok(())
