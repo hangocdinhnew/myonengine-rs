@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 use winit::{
     application::ApplicationHandler,
     event::{ElementState, KeyEvent, WindowEvent},
@@ -13,13 +13,13 @@ use wasm_bindgen::prelude::*;
 use crate::logger::Logger;
 
 pub struct Engine {
-    logger: Arc<Logger>,
-    window: Option<Arc<Window>>,
+    logger: Rc<Logger>,
+    window: Option<Rc<Window>>,
 }
 
 impl Engine {
     pub fn new() -> Self {
-        let logger = Arc::new(Logger::new());
+        let logger = Rc::new(Logger::new());
 
         Self {
             logger,
@@ -49,7 +49,7 @@ impl ApplicationHandler for Engine {
             .create_window(window_attributes)
             .expect("Failed to create window");
 
-        self.window = Some(Arc::new(window));
+        self.window = Some(Rc::new(window));
     }
 
     fn window_event(
