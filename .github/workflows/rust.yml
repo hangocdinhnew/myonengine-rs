@@ -92,13 +92,12 @@ jobs:
           --dir artifacts/ \
           --repo "$GITHUB_REPOSITORY"
 
-        git push origin --delete "$RELEASE_TAG" || true
-
-        git tag "$RELEASE_TAG" "$GITHUB_SHA"
-        git push origin "$RELEASE_TAG"
+        gh api repos/${GITHUB_REPOSITORY}/git/refs \
+          -X POST \
+          -f ref="refs/tags/$RELEASE_TAG" \
+          -f sha="$GITHUB_SHA" || true
 
         pushd artifacts/
-        echo "Found artifacts:"
         ls
         for i in $(find -mindepth 1 -maxdepth 1 -type d); do
           mv "$i"/* .
