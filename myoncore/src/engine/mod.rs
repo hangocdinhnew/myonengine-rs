@@ -2,9 +2,8 @@ use std::rc::Rc;
 use winit::{
     application::ApplicationHandler,
     dpi::LogicalSize,
-    event::{ElementState, KeyEvent, WindowEvent},
-    event_loop::{ActiveEventLoop, EventLoop},
-    keyboard::{KeyCode, PhysicalKey},
+    event::WindowEvent,
+    event_loop::ActiveEventLoop,
     window::{Window, WindowAttributes},
 };
 
