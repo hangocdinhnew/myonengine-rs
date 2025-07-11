@@ -37,8 +37,8 @@ jobs:
 
       - name: Archive binary
         run: |
-          mkdir output
-          cp target/${{ matrix.build_mode }}/myonsandbox output/
+          mkdir myonsandbox-${{ steps.prep.outputs.archive_name }}
+          cp target/${{ matrix.build_mode }}/myonsandbox myonsandbox-${{ steps.prep.outputs.archive_name }}/
 
           EXT=""
           if [[ "${{ runner.os }}" == "Windows" ]]; then
