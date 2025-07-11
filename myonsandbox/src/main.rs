@@ -8,15 +8,7 @@ use winit::{
 struct Sandbox;
 
 impl AppHandler for Sandbox {
-    fn on_event(&mut self, event_loop: &ActiveEventLoop, event: &WindowEvent) {
-        match event {
-            WindowEvent::CloseRequested => {
-                tracing::info!("Closing...");
-                event_loop.exit();
-            },
-            _ => {}
-        }
-    }
+    fn on_event(&mut self, event_loop: &ActiveEventLoop, event: &WindowEvent) {}
 
     fn on_update(&mut self) {}
 }

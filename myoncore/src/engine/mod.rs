@@ -82,6 +82,14 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
         _id: winit::window::WindowId,
         event: WindowEvent,
     ) {
+        match event {
+            WindowEvent::CloseRequested => {
+                tracing::info!("Closing...");
+                event_loop.exit();
+            },
+            _ => {}
+        }
+
         self.app.on_event(event_loop, &event);
     }
 }
