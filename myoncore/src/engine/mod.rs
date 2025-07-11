@@ -7,7 +7,7 @@ use winit::{
     window::{Window, WindowAttributes},
 };
 
-use crate::logger::Logger;
+use crate::{graphics::GraphicsAPI, logger::Logger};
 
 #[derive(Default)]
 pub struct EngineConfig {
@@ -38,6 +38,7 @@ pub struct Engine<A: AppHandler> {
     config: Rc<EngineConfig>,
     logger: Rc<Logger>,
     window: Option<Rc<Window>>,
+    graphicsapi: Option<Rc<GraphicsAPI>>,
     app: A,
 }
 
@@ -49,6 +50,7 @@ impl<A: AppHandler> Engine<A> {
             config,
             logger,
             window: None,
+            graphicsapi: None,
             app,
         }
     }
@@ -64,12 +66,14 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
         let window = event_loop
             .create_window(window_attributes)
             .expect("Failed to create window");
-
         self.window = Some(Rc::new(window));
 
-        self.app.on_update();
-
         tracing::info!("Window created!");
+
+        let graphicsapi = GraphicsAPI::new();
+        self.graphicsapi = Some(Rc::new(graphicsapi));
+
+        self.app.on_update();
     }
 
     fn window_event(

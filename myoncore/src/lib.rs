@@ -1,4 +1,5 @@
 pub mod logger;
+pub mod graphics;
 pub mod engine;
 
 pub use engine::Engine as Engine;
