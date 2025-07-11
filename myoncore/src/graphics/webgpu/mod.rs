@@ -1,15 +1,19 @@
+mod webgpuadapter;
 mod webgpuinstance;
 mod webgpusurface;
 
 use std::{rc::Rc, sync::Arc};
+use winit::window::Window;
+
+use webgpuadapter::WebGPUAdapter;
 use webgpuinstance::WebGPUInstance;
 use webgpusurface::WebGPUSurface;
-use winit::window::Window;
 
 pub struct WebGPUAPI {
     pub instance: Rc<WebGPUInstance>,
     pub surface: Rc<WebGPUSurface>,
-    window: Arc<Window>
+    pub adapter: Rc<WebGPUAdapter>,
+    window: Arc<Window>,
 }
 
 impl WebGPUAPI {
@@ -18,11 +22,13 @@ impl WebGPUAPI {
 
         let instance = Rc::new(WebGPUInstance::new());
         let surface = Rc::new(WebGPUSurface::new(instance.clone(), window.clone()));
+        let adapter = Rc::new(WebGPUAdapter::new(instance.clone(), surface.clone()));
 
         Self {
             instance,
             surface,
-            window
+            adapter,
+            window,
         }
     }
 }

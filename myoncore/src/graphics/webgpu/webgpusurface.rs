@@ -11,10 +11,7 @@ pub struct WebGPUSurface {
 }
 
 impl WebGPUSurface {
-    pub fn new(
-        instance: Rc<WebGPUInstance>,
-        window: Arc<Window>,
-    ) -> Self {
+    pub fn new(instance: Rc<WebGPUInstance>, window: Arc<Window>) -> Self {
         tracing::info!("Creating WebGPU surface...");
 
         let surface = instance

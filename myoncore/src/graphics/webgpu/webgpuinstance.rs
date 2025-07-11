@@ -19,7 +19,7 @@ impl WebGPUInstance {
 
         Self {
             instancedescriptor,
-            instance
+            instance,
         }
     }
 }
