@@ -8,13 +8,12 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  VERSION: "0.1.0"
 
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, ubuntu-latest-arm, windows-latest, macos-latest]
         build_mode: [release, debug]
     runs-on: ${{ matrix.os }}
 
@@ -30,26 +29,33 @@ jobs:
           OS_NAME=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
           ARCH_NAME=$(uname -m)
           MODE="${{ matrix.build_mode }}"
-          VERSION="${{ env.VERSION }}"
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="${GITHUB_REF#refs/heads/}"
+            VERSION=$(echo "$VERSION" | tr '/' '-')
+          fi
+
           ARCHIVE_NAME="${MODE}-${OS_NAME}_${ARCH_NAME}-${VERSION}"
           echo "archive_name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Archive binary
         run: |
-          mkdir ${{ steps.prep.outputs.archive_name }}
-          cp target/${{ matrix.build_mode }}/myonsandbox ${{ steps.prep.outputs.archive_name }}/
+          mkdir myonengine-${{ steps.prep.outputs.archive_name }}
+          cp target/${{ matrix.build_mode }}/myonsandbox myonengine-${{ steps.prep.outputs.archive_name }}/
 
           EXT=""
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             EXT="zip"
-            7z a "${{ steps.prep.outputs.archive_name }}.${EXT}" ./${{ steps.prep.outputs.archive_name }}/*
+            7z a "myonengine-${{ steps.prep.outputs.archive_name }}.${EXT}" ./myonengine-${{ steps.prep.outputs.archive_name }}/*
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             EXT="zip"
-            zip -r "${{ steps.prep.outputs.archive_name }}.${EXT}" ${{ steps.prep.outputs.archive_name }}
+            zip -r "myonengine-${{ steps.prep.outputs.archive_name }}.${EXT}" myonengine-${{ steps.prep.outputs.archive_name }}
           else
             EXT="tar.xz"
-            tar -cJf "${{ steps.prep.outputs.archive_name }}.${EXT}" ${{ steps.prep.outputs.archive_name }}
+            tar -cJf "myonengine-${{ steps.prep.outputs.archive_name }}.${EXT}" myonengine-${{ steps.prep.outputs.archive_name }}
           fi
         shell: bash
 
@@ -60,3 +66,34 @@ jobs:
           path: |
             *.zip
             *.tar.xz
+
+
+release:
+  needs: build
+  if: github.ref == 'refs/heads/main'
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: Display artifact structure
+      run: ls -R ./artifacts
+
+    - name: Create or update GitHub release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: continuous
+        name: "Continuous Build"
+        body: |
+          Latest artifacts built from `main`.
+
+          This release is updated every time a new commit is pushed to `main`.
+        draft: false
+        prerelease: true
+        files: ./artifacts/**/*.zip
+          ./artifacts/**/*.tar.xz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
