@@ -2,6 +2,7 @@ use tracing::info;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, fmt};
 
+#[derive(Default)]
 pub struct Logger;
 
 impl Logger {
@@ -30,11 +31,5 @@ impl Logger {
         info!("Logger system initialized!");
 
         Self
-    }
-}
-
-impl Default for Logger {
-    fn default() -> Self {
-        Self::new()
     }
 }

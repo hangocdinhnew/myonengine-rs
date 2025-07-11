@@ -13,6 +13,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::logger::Logger;
 
+#[derive(Default)]
 pub struct EngineConfig {
     title: String,
     width: u16,
@@ -31,17 +32,12 @@ impl EngineConfig {
     }
 }
 
-impl Default for EngineConfig {
-    fn default() -> Self {
-        Self::new(String::from("My window"), 800, 600, true)
-    }
-}
-
 pub trait AppHandler {
     fn on_event(&mut self, event_loop: &ActiveEventLoop, event: &WindowEvent);
     fn on_update(&mut self);
 }
 
+#[derive(Default)]
 pub struct Engine<A: AppHandler> {
     config: Rc<EngineConfig>,
     logger: Rc<Logger>,
