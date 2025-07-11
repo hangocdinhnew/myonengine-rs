@@ -8,9 +8,6 @@ use winit::{
     window::{Window, WindowAttributes},
 };
 
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::*;
-
 use crate::logger::Logger;
 
 #[derive(Default)]
