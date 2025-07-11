@@ -14,7 +14,14 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [
+          ubuntu-latest,
+          ubuntu-22.04-arm,
+          windows-latest,
+          windows-11-arm,
+          macos-latest,
+          macos-13
+        ]
         build_mode: [release, debug]
     runs-on: ${{ matrix.os }}
 
@@ -22,14 +29,23 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build
-        run: cargo build ${{ matrix.build_mode == 'release' && '--release' || '' }}
+        run: |
+          if [[ "${{ matrix.build_mode }}" == "release" ]]; then
+            cargo build --release
+          else
+            cargo build
+          fi
+        shell: bash
 
       - name: Prepare artifact name
         id: prep
         run: |
           BIN_NAME="myonsandbox"
           OS_NAME=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          ARCH_NAME=$(uname -m)
+          case "${{ matrix.os }}" in
+            *-arm) ARCH_NAME="aarch64" ;;
+            *) ARCH_NAME="x86_64" ;;
+          esac
           MODE="${{ matrix.build_mode }}"
           VERSION="${{ env.VERSION }}"
           ARCHIVE_NAME="${BIN_NAME}-${MODE}-${OS_NAME}_${ARCH_NAME}-${VERSION}"
@@ -39,7 +55,7 @@ jobs:
       - name: Archive binary
         run: |
           mkdir output
-          cp target/${{ matrix.build_mode }}/myonsandbox output/
+          cp target/${{ matrix.build_mode }}/myonsandbox* output/
 
           EXT=""
           if [[ "${{ runner.os }}" == "Windows" ]]; then
