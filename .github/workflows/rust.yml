@@ -14,13 +14,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [
-          ubuntu-latest,
-          ubuntu-22.04-arm,
-          windows-latest,
-          macos-latest,
-          macos-13
-        ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         build_mode: [release, debug]
     runs-on: ${{ matrix.os }}
 
@@ -28,44 +22,34 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build
-        run: |
-          if [[ "${{ matrix.build_mode }}" == "release" ]]; then
-            cargo build --release
-          else
-            cargo build
-          fi
-        shell: bash
+        run: cargo build ${{ matrix.build_mode == 'release' && '--release' || '' }}
 
       - name: Prepare artifact name
         id: prep
         run: |
-          BIN_NAME="myonsandbox"
           OS_NAME=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-          case "${{ matrix.os }}" in
-            *-arm) ARCH_NAME="aarch64" ;;
-            *) ARCH_NAME="x86_64" ;;
-          esac
+          ARCH_NAME=$(uname -m)
           MODE="${{ matrix.build_mode }}"
           VERSION="${{ env.VERSION }}"
-          ARCHIVE_NAME="${BIN_NAME}-${MODE}-${OS_NAME}_${ARCH_NAME}-${VERSION}"
+          ARCHIVE_NAME="${MODE}-${OS_NAME}_${ARCH_NAME}-${VERSION}"
           echo "archive_name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Archive binary
         run: |
           mkdir output
-          cp target/${{ matrix.build_mode }}/myonsandbox* output/
+          cp target/${{ matrix.build_mode }}/myonsandbox output/
 
           EXT=""
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             EXT="zip"
-            7z a "${{ steps.prep.outputs.archive_name }}.${EXT}" ./output/*
+            7z a "myonsandbox-${{ steps.prep.outputs.archive_name }}.${EXT}" ./output/*
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             EXT="zip"
-            zip -r "${{ steps.prep.outputs.archive_name }}.${EXT}" output
+            zip -r "myonsandbox-${{ steps.prep.outputs.archive_name }}.${EXT}" output
           else
             EXT="tar.xz"
-            tar -cJf "${{ steps.prep.outputs.archive_name }}.${EXT}" output
+            tar -cJf "myonsandbox-${{ steps.prep.outputs.archive_name }}.${EXT}" output
           fi
         shell: bash
 
