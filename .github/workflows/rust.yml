@@ -27,28 +27,37 @@ jobs:
       - name: Prepare artifact name
         id: prep
         run: |
-          echo "name=$(echo engine-${{ matrix.build_mode }}-${VERSION})" >> $GITHUB_OUTPUT
+          BIN_NAME="myonsandbox"
+          OS_NAME=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          ARCH_NAME=$(uname -m)
+          MODE="${{ matrix.build_mode }}"
+          VERSION="${{ env.VERSION }}"
+          ARCHIVE_NAME="${BIN_NAME}-${MODE}-${OS_NAME}_${ARCH_NAME}-${VERSION}"
+          echo "archive_name=$ARCHIVE_NAME" >> $GITHUB_OUTPUT
+        shell: bash
 
       - name: Archive binary
         run: |
           mkdir output
           cp target/${{ matrix.build_mode }}/myonsandbox output/
 
-          ARCHIVE_NAME="${{ steps.prep.outputs.name }}"
-
+          EXT=""
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            7z a "${ARCHIVE_NAME}.zip" ./output/*
+            EXT="zip"
+            7z a "${{ steps.prep.outputs.archive_name }}.${EXT}" ./output/*
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            zip -r "${ARCHIVE_NAME}.zip" output
+            EXT="zip"
+            zip -r "${{ steps.prep.outputs.archive_name }}.${EXT}" output
           else
-            tar -cJf "${ARCHIVE_NAME}.tar.xz" output
+            EXT="tar.xz"
+            tar -cJf "${{ steps.prep.outputs.archive_name }}.${EXT}" output
           fi
         shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.prep.outputs.name }}
+          name: ${{ steps.prep.outputs.archive_name }}
           path: |
             *.zip
             *.tar.xz
