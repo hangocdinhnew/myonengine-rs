@@ -1,4 +1,4 @@
-name: Rust
+name: Rust CI
 
 on:
   push:
@@ -8,13 +8,52 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  VERSION: "0.1.0"
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        build_mode: [release, debug]
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
+
+      - name: Build
+        run: cargo build ${{ matrix.build_mode == 'release' && '--release' || '' }}
+
+      - name: Prepare artifact name
+        id: prep
+        run: |
+          echo "name=$(echo engine-${{ matrix.build_mode }}-${VERSION})" >> $GITHUB_OUTPUT
+
+      - name: Archive binary
+        run: |
+          mkdir output
+          cp target/${{ matrix.build_mode }}/myonsandbox output/
+
+          ARCHIVE_NAME="${{ steps.prep.outputs.name }}"
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            7z a "${ARCHIVE_NAME}.zip" ./output/*
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            zip -r "${ARCHIVE_NAME}.zip" output
+          else
+            tar -cJf "${ARCHIVE_NAME}.tar.xz" output
+          fi
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.prep.outputs.name }}
+          path: |
+            *.zip
+            *.tar.xz
