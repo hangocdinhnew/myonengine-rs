@@ -37,19 +37,19 @@ jobs:
 
       - name: Archive binary
         run: |
-          mkdir myonsandbox-${{ steps.prep.outputs.archive_name }}
-          cp target/${{ matrix.build_mode }}/myonsandbox myonsandbox-${{ steps.prep.outputs.archive_name }}/
+          mkdir ${{ steps.prep.outputs.archive_name }}
+          cp target/${{ matrix.build_mode }}/myonsandbox ${{ steps.prep.outputs.archive_name }}/
 
           EXT=""
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             EXT="zip"
-            7z a "myonsandbox-${{ steps.prep.outputs.archive_name }}.${EXT}" ./output/*
+            7z a "${{ steps.prep.outputs.archive_name }}.${EXT}" ./${{ steps.prep.outputs.archive_name }}/*
           elif [[ "${{ runner.os }}" == "macOS" ]]; then
             EXT="zip"
-            zip -r "myonsandbox-${{ steps.prep.outputs.archive_name }}.${EXT}" output
+            zip -r "${{ steps.prep.outputs.archive_name }}.${EXT}" ${{ steps.prep.outputs.archive_name }}
           else
             EXT="tar.xz"
-            tar -cJf "myonsandbox-${{ steps.prep.outputs.archive_name }}.${EXT}" output
+            tar -cJf "${{ steps.prep.outputs.archive_name }}.${EXT}" ${{ steps.prep.outputs.archive_name }}
           fi
         shell: bash
 
