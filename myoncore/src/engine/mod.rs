@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, sync::Arc};
 use winit::{
     application::ApplicationHandler,
     dpi::LogicalSize,
@@ -37,7 +37,7 @@ pub trait AppHandler {
 pub struct Engine<A: AppHandler> {
     config: Rc<EngineConfig>,
     logger: Rc<Logger>,
-    window: Option<Rc<Window>>,
+    window: Option<Arc<Window>>,
     graphicsapi: Option<Rc<GraphicsAPI>>,
     app: A,
 }
@@ -66,11 +66,16 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
         let window = event_loop
             .create_window(window_attributes)
             .expect("Failed to create window");
-        self.window = Some(Rc::new(window));
+        self.window = Some(Arc::new(window));
 
         tracing::info!("Window created!");
 
-        let graphicsapi = GraphicsAPI::new();
+        let graphicsapi = GraphicsAPI::new(
+            self.window
+                .as_ref()
+                .expect("Failed to unwrap Option<window>")
+                .clone(),
+        );
         self.graphicsapi = Some(Rc::new(graphicsapi));
 
         self.app.on_update();
@@ -86,7 +91,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             WindowEvent::CloseRequested => {
                 tracing::info!("Closing...");
                 event_loop.exit();
-            },
+            }
             _ => {}
         }
 
