@@ -37,7 +37,7 @@ pub trait AppHandler {
 pub struct Engine<A: AppHandler> {
     config: Rc<EngineConfig>,
     logger: Rc<Logger>,
-    windowsys: Option<Arc<WindowSystem>>,
+    windowsys: Option<Rc<WindowSystem>>,
     graphicsapi: Option<Rc<GraphicsAPI>>,
     app: A,
 }
@@ -64,7 +64,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             .with_resizable(self.config.resizable);
 
         let windowsys = WindowSystem::new(window_attributes, event_loop);
-        self.windowsys = Some(Arc::new(windowsys));
+        self.windowsys = Some(Rc::new(windowsys));
 
         tracing::info!("Window created!");
 
