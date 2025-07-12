@@ -7,7 +7,7 @@ use winit::{
     window::{Window, WindowAttributes},
 };
 
-use crate::{graphics::GraphicsAPI, logger::Logger};
+use crate::{graphics::GraphicsAPI, logger::Logger, window::WindowSystem};
 
 #[derive(Default)]
 pub struct EngineConfig {
@@ -37,7 +37,7 @@ pub trait AppHandler {
 pub struct Engine<A: AppHandler> {
     config: Rc<EngineConfig>,
     logger: Rc<Logger>,
-    window: Option<Arc<Window>>,
+    windowsys: Option<Arc<WindowSystem>>,
     graphicsapi: Option<Rc<GraphicsAPI>>,
     app: A,
 }
@@ -49,7 +49,7 @@ impl<A: AppHandler> Engine<A> {
         Self {
             config,
             logger,
-            window: None,
+            windowsys: None,
             graphicsapi: None,
             app,
         }
@@ -63,17 +63,15 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             .with_inner_size(LogicalSize::new(self.config.width, self.config.height))
             .with_resizable(self.config.resizable);
 
-        let window = event_loop
-            .create_window(window_attributes)
-            .expect("Failed to create window");
-        self.window = Some(Arc::new(window));
+        let windowsys = WindowSystem::new(window_attributes, event_loop);
+        self.windowsys = Some(Arc::new(windowsys));
 
         tracing::info!("Window created!");
 
         let graphicsapi = GraphicsAPI::new(
-            self.window
+            self.windowsys
                 .as_ref()
-                .expect("Failed to unwrap Option<window>")
+                .expect("Failed to unwrap windowsys!")
                 .clone(),
         );
         self.graphicsapi = Some(Rc::new(graphicsapi));
