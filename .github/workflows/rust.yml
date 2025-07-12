@@ -92,12 +92,8 @@ jobs:
           --dir artifacts/ \
           --repo "$GITHUB_REPOSITORY"
 
-        gh api repos/${GITHUB_REPOSITORY}/git/refs \
-          -X POST \
-          -f ref="refs/tags/$RELEASE_TAG" \
-          -f sha="$GITHUB_SHA" || true
-
         pushd artifacts/
+        echo "Found artifacts:"
         ls
         for i in $(find -mindepth 1 -maxdepth 1 -type d); do
           mv "$i"/* .
