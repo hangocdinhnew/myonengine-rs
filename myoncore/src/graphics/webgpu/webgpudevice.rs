@@ -10,6 +10,8 @@ pub struct WebGPUDevice {
 
 impl WebGPUDevice {
     pub fn new(adapter: Rc<WebGPUAdapter>) -> Self {
+        tracing::info!("Requesting device...");
+
         let descriptor = wgpu::DeviceDescriptor {
             label: None,
             required_features: wgpu::Features::empty(),

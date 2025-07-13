@@ -10,6 +10,8 @@ pub struct WebGPUAdapter {
 
 impl WebGPUAdapter {
     pub fn new(instance: Rc<WebGPUInstance>, surface: Rc<WebGPUSurface>) -> Self {
+        tracing::info!("Requesting adapter...");
+
         let request_adapter_options = RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::default(),
             compatible_surface: Some(&surface.surface),
