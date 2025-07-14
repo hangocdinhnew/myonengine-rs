@@ -1,5 +1,7 @@
 use std::{rc::Rc, sync::Arc};
-use wgpu::{CreateSurfaceError, Surface};
+use wgpu::{
+    Adapter, CreateSurfaceError, Device, Surface, SurfaceCapabilities, SurfaceConfiguration, TextureFormat
+};
 use winit::window::Window;
 
 use super::webgpuinstance::WebGPUInstance;

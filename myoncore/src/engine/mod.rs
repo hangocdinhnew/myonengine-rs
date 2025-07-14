@@ -63,18 +63,14 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             .with_inner_size(LogicalSize::new(self.config.width, self.config.height))
             .with_resizable(self.config.resizable);
 
-        let windowsys = WindowSystem::new(window_attributes, event_loop);
-        self.windowsys = Some(Rc::new(windowsys));
+        let windowsys = Rc::new(WindowSystem::new(window_attributes, event_loop));
 
         tracing::info!("Window created!");
 
-        let graphicsapi = GraphicsAPI::new(
-            self.windowsys
-                .as_ref()
-                .expect("Failed to unwrap windowsys!")
-                .clone(),
-        );
-        self.graphicsapi = Some(Rc::new(graphicsapi));
+        let graphicsapi = Rc::new(GraphicsAPI::new(windowsys.clone()));
+
+        self.windowsys = Some(windowsys);
+        self.graphicsapi = Some(graphicsapi);
 
         self.app.on_update();
     }

@@ -13,7 +13,13 @@ pub struct GraphicsAPI {
 
 impl GraphicsAPI {
     pub fn new(window: Rc<WindowSystem>) -> Self {
-        let webgpu = WebGPUAPI::new(window.window.clone());
+        let mut webgpu = WebGPUAPI::new(window.window.clone());
+
+        let size= window.window.inner_size();
+        let width = size.width;
+        let height = size.height;
+
+        webgpu.configure(width, height);
 
         Self { webgpu, window }
     }
