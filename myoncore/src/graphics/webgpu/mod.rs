@@ -53,8 +53,24 @@ impl WebGPUAPI {
 
         self.surface.surface.configure(
             &self.device.device,
-            self
-                .surface_config
+            self.surface_config
+                .as_ref()
+                .expect("Failed to unwrap surface_config"),
+        );
+    }
+
+    pub fn resize(&mut self, width: u32, height: u32) {
+        let surface_config = self
+            .surface_config
+            .as_mut()
+            .expect("Failed to get surface_format!");
+
+        surface_config.width = width;
+        surface_config.height = height;
+
+        self.surface.surface.configure(
+            &self.device.device,
+            self.surface_config
                 .as_ref()
                 .expect("Failed to unwrap surface_config"),
         );

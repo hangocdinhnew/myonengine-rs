@@ -65,7 +65,7 @@ fn main() -> anyhow::Result<()> {
         String::from("MyonSandbox"),
         800,
         600,
-        false,
+        true,
     ));
     let mut engine = Engine::new(Rc::clone(&engineconfig), Sandbox);
     event_loop.run_app(&mut engine)?;

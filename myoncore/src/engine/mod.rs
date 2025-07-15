@@ -38,7 +38,7 @@ pub struct Engine<A: AppHandler> {
     config: Rc<EngineConfig>,
     logger: Rc<Logger>,
     windowsys: Option<Rc<WindowSystem>>,
-    graphicsapi: Option<Rc<GraphicsAPI>>,
+    graphicsapi: Option<Rc<RefCell<GraphicsAPI>>>,
     renderer: Option<Rc<RefCell<Renderer>>>,
     app: A,
 }
@@ -69,7 +69,10 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
 
         tracing::info!("Window created!");
 
-        let graphicsapi = Rc::new(GraphicsAPI::new(Backend::WebGPU, windowsys.clone()));
+        let graphicsapi = Rc::new(RefCell::new(GraphicsAPI::new(
+            Backend::WebGPU,
+            windowsys.clone(),
+        )));
 
         tracing::info!("Graphics API created!");
 
@@ -97,18 +100,19 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             }
 
             WindowEvent::RedrawRequested => {
+                let mut graphicsapi = self
+                    .graphicsapi
+                    .as_ref()
+                    .expect("Failed to get graphicsapi")
+                    .borrow_mut();
+
                 let renderer_rc = self
                     .renderer
                     .as_ref()
                     .expect("Failed to get renderer")
                     .clone();
 
-                match self
-                    .graphicsapi
-                    .as_ref()
-                    .expect("Failed to get backend.")
-                    .backend
-                {
+                match graphicsapi.backend {
                     Backend::WebGPU => {
                         {
                             let mut renderer = renderer_rc.borrow_mut();
@@ -121,7 +125,26 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
                                 Ok(_) => {}
 
                                 Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                                    panic!("Resizing is not supported!")
+                                    let mut webgpu = graphicsapi
+                                        .webgpu
+                                        .as_mut()
+                                        .expect("Failed to get webgpu backend!")
+                                        .borrow_mut();
+
+                                    let size = self
+                                        .windowsys
+                                        .as_ref()
+                                        .expect("Failed to get windowsys")
+                                        .window
+                                        .inner_size();
+
+                                    webgpu.resize(size.width, size.height);
+
+                                    self.windowsys
+                                        .as_ref()
+                                        .expect("Failed to get windowsys")
+                                        .window
+                                        .request_redraw();
                                 }
 
                                 Err(e) => {
@@ -135,10 +158,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
 
                         self.app.on_render(
                             renderer_rc.clone(),
-                            self.graphicsapi
-                                .as_ref()
-                                .expect("Failed to get backend.")
-                                .backend,
+                            graphicsapi.backend
                         );
 
                         {
@@ -159,6 +179,35 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
                     }
 
                     _ => panic!("Unknown backend!"),
+                }
+            }
+
+            WindowEvent::Resized(size) => {
+                let mut graphicsapi = self
+                    .graphicsapi
+                    .as_ref()
+                    .expect("Failed to get graphicsapi")
+                    .borrow_mut();
+
+                match graphicsapi.backend
+                {
+                    Backend::WebGPU => {
+                        let mut webgpu = graphicsapi
+                            .webgpu
+                            .as_mut()
+                            .expect("Failed to get webgpu backend!")
+                            .borrow_mut();
+
+                        webgpu.resize(size.width, size.height);
+
+                        self.windowsys
+                            .as_ref()
+                            .expect("Failed to get windowsys")
+                            .window
+                            .request_redraw();
+                    }
+
+                    _ => {}
                 }
             }
 

@@ -1,5 +1,6 @@
 mod webgpu;
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::graphics::GraphicsAPI;
@@ -8,26 +9,37 @@ use webgpu::WebGPURenderer;
 
 pub struct Renderer {
     pub webgpu: Option<WebGPURenderer>,
-    graphicsapi: Rc<GraphicsAPI>,
+    graphicsapi: Rc<RefCell<GraphicsAPI>>,
 }
 
 impl Renderer {
-    pub fn new(graphicsapi: Rc<GraphicsAPI>) -> Self {
-        match graphicsapi.backend {
+    pub fn new(graphicsapi: Rc<RefCell<GraphicsAPI>>) -> Self {
+        let backend;
+
+        {
+            let graphicsapi_borrow = graphicsapi.borrow();
+            backend = graphicsapi_borrow.backend;
+        }
+
+        match backend {
             Backend::WebGPU => {
-                let mut webgpu = Some(WebGPURenderer::new(
-                    graphicsapi.webgpu.clone().expect("Graphics API failed to get."),
-                ));
+                let webgpu_inner = {
+                    let graphicsapi_borrow = graphicsapi.borrow();
+                    WebGPURenderer::new(
+                        graphicsapi_borrow
+                            .webgpu
+                            .clone()
+                            .expect("Graphics API failed to get."),
+                    )
+                };
 
                 Self {
-                    webgpu,
+                    webgpu: Some(webgpu_inner),
                     graphicsapi,
                 }
             }
 
-            _ => {
-                panic!("Unknown backend!");
-            }
+            _ => panic!("Unknown backend!"),
         }
     }
 }

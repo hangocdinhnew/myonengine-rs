@@ -37,9 +37,7 @@ impl GraphicsAPI {
                 }
             }
 
-            _ => {
-                panic!("Unknown backend!");
-            }
+            _ => panic!("Unknown backend!")
         }
     }
 }
