@@ -793,6 +793,7 @@ dependencies = [
  "anyhow",
  "myoncore",
  "tracing",
+ "wgpu",
  "winit",
 ]
 

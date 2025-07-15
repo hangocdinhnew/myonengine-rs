@@ -9,3 +9,4 @@ anyhow.workspace = true
 myoncore.workspace = true
 tracing.workspace = true
 winit.workspace = true
+wgpu.workspace = true
