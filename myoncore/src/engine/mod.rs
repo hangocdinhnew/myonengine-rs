@@ -156,10 +156,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
                             webgpu.begin_command_buffer();
                         }
 
-                        self.app.on_render(
-                            renderer_rc.clone(),
-                            graphicsapi.backend
-                        );
+                        self.app.on_render(renderer_rc.clone(), graphicsapi.backend);
 
                         {
                             let mut renderer = renderer_rc.borrow_mut();
@@ -189,8 +186,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
                     .expect("Failed to get graphicsapi")
                     .borrow_mut();
 
-                match graphicsapi.backend
-                {
+                match graphicsapi.backend {
                     Backend::WebGPU => {
                         let mut webgpu = graphicsapi
                             .webgpu
