@@ -33,7 +33,6 @@ impl AppHandler for Sandbox {
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         view: texture_view,
                         resolve_target: None,
-                        depth_slice: None,
                         ops: wgpu::Operations {
                             load: wgpu::LoadOp::Clear(wgpu::Color {
                                 r: 1.0,
