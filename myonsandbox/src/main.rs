@@ -61,13 +61,13 @@ impl AppHandler for Sandbox {
 
 fn main() -> anyhow::Result<()> {
     let event_loop = EventLoop::new()?;
-    let engineconfig = Rc::new(EngineConfig::new(
+    let engineconfig = EngineConfig::new(
         String::from("MyonSandbox"),
         800,
         600,
         true,
-    ));
-    let mut engine = Engine::new(Rc::clone(&engineconfig), Sandbox);
+    );
+    let mut engine = Engine::new(engineconfig, Sandbox);
     event_loop.run_app(&mut engine)?;
 
     Ok(())

@@ -35,8 +35,8 @@ pub trait AppHandler {
 
 #[derive(Default)]
 pub struct Engine<A: AppHandler> {
-    config: Rc<EngineConfig>,
-    logger: Rc<Logger>,
+    config: EngineConfig,
+    logger: Logger,
     windowsys: Option<Rc<WindowSystem>>,
     graphicsapi: Option<Rc<RefCell<GraphicsAPI>>>,
     renderer: Option<Rc<RefCell<Renderer>>>,
@@ -44,8 +44,8 @@ pub struct Engine<A: AppHandler> {
 }
 
 impl<A: AppHandler> Engine<A> {
-    pub fn new(config: Rc<EngineConfig>, app: A) -> Self {
-        let logger = Rc::new(Logger::new());
+    pub fn new(config: EngineConfig, app: A) -> Self {
+        let logger = Logger::new();
 
         Self {
             config,
