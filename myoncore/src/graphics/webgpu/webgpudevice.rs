@@ -1,15 +1,12 @@
-use super::webgpuadapter::WebGPUAdapter;
-use std::rc::Rc;
-use wgpu::{Device, Queue};
+use wgpu::{Adapter, Device, Queue};
 
 pub struct WebGPUDevice {
     pub device: Device,
     pub queue: Queue,
-    adapter: Rc<WebGPUAdapter>,
 }
 
 impl WebGPUDevice {
-    pub fn new(adapter: Rc<WebGPUAdapter>) -> Self {
+    pub fn new(adapter: &Adapter) -> Self {
         tracing::info!("Requesting device...");
 
         let descriptor = wgpu::DeviceDescriptor {
@@ -20,13 +17,9 @@ impl WebGPUDevice {
             trace: wgpu::Trace::Off,
         };
 
-        let (device, queue) = pollster::block_on(adapter.adapter.request_device(&descriptor))
+        let (device, queue) = pollster::block_on(adapter.request_device(&descriptor))
             .expect("Failed to create device/queue!");
 
-        Self {
-            device,
-            queue,
-            adapter,
-        }
+        Self { device, queue }
     }
 }

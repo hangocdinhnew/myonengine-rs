@@ -12,9 +12,7 @@ impl AppHandler for Sandbox {
 
     fn on_update(&mut self) {}
 
-    fn on_render(&mut self, renderer: Rc<RefCell<Renderer>>, backend: Backend) {
-        let mut renderer = renderer.borrow_mut();
-
+    fn on_render(&mut self, renderer: &mut Renderer, backend: Backend) {
         match backend {
             Backend::WebGPU => {
                 let webgpu = renderer
@@ -61,12 +59,7 @@ impl AppHandler for Sandbox {
 
 fn main() -> anyhow::Result<()> {
     let event_loop = EventLoop::new()?;
-    let engineconfig = EngineConfig::new(
-        String::from("MyonSandbox"),
-        800,
-        600,
-        true,
-    );
+    let engineconfig = EngineConfig::new(String::from("MyonSandbox"), 800, 600, true);
     let mut engine = Engine::new(engineconfig, Sandbox);
     event_loop.run_app(&mut engine)?;
 

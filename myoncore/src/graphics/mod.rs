@@ -1,43 +1,36 @@
 mod webgpu;
 
-use std::cell::RefCell;
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
+
 pub use webgpu::WebGPUAPI;
 use winit::window::Window;
 
 use crate::rhi::Backend;
-use crate::window::WindowSystem;
 
 pub struct GraphicsAPI {
     pub backend: Backend,
-    pub webgpu: Option<Rc<RefCell<WebGPUAPI>>>,
-    window: Rc<WindowSystem>,
+    pub webgpu: Option<WebGPUAPI>,
 }
 
 impl GraphicsAPI {
-    pub fn new(backend: Backend, window: Rc<WindowSystem>) -> Self {
+    pub fn new(backend: Backend, window: Arc<Window>) -> Self {
         match backend {
             Backend::WebGPU => {
-                let mut webgpu = Some(Rc::new(RefCell::new(WebGPUAPI::new(window.window.clone()))));
+                let mut webgpu = Some(WebGPUAPI::new(window.clone()));
 
-                let size = window.window.inner_size();
+                let size = window.inner_size();
                 let width = size.width;
                 let height = size.height;
 
                 webgpu
                     .as_mut()
                     .expect("WebGPU backend isn't initialized!")
-                    .borrow_mut()
                     .configure(width, height);
 
-                Self {
-                    backend,
-                    webgpu,
-                    window,
-                }
+                Self { backend, webgpu }
             }
 
-            _ => panic!("Unknown backend!")
+            _ => panic!("Unknown backend!"),
         }
     }
 }
