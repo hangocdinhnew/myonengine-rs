@@ -11,3 +11,4 @@ tracing-subscriber.workspace = true
 winit.workspace = true
 wgpu.workspace = true
 pollster.workspace = true
+ouroboros.workspace = true

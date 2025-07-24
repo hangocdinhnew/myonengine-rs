@@ -68,7 +68,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
         self.windowsys = Some(windowsys);
         tracing::info!("Window created!");
 
-        let mut graphicsapi = GraphicsAPI::new(
+        let graphicsapi = GraphicsAPI::new(
             Backend::WebGPU,
             self.windowsys
                 .as_ref()
