@@ -1,4 +1,3 @@
-use std::rc::Rc;
 use wgpu::{Adapter, Instance, RequestAdapterOptions, Surface};
 
 pub struct WebGPUAdapter {

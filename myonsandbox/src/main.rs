@@ -1,5 +1,4 @@
 use myoncore::{renderer::Renderer, AppHandler, Backend, Engine, EngineConfig};
-use std::{cell::RefCell, rc::Rc};
 use winit::{
     event::WindowEvent,
     event_loop::{ActiveEventLoop, EventLoop},

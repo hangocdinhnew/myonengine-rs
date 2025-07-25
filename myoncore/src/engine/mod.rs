@@ -104,12 +104,12 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             }
 
             WindowEvent::RedrawRequested => {
-                let mut graphicsapi = self
+                let graphicsapi = self
                     .graphicsapi
                     .as_mut()
                     .expect("Failed to get graphicsapi");
 
-                let mut renderer = self.renderer.as_mut().expect("Failed to get renderer");
+                let renderer = self.renderer.as_mut().expect("Failed to get renderer");
 
                 match graphicsapi.backend {
                     Backend::WebGPU => {
@@ -119,7 +119,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
                                 .as_mut()
                                 .expect("Failed to get WebGPU renderer.");
 
-                            let mut webgpu_api = graphicsapi
+                            let webgpu_api = graphicsapi
                                 .webgpu
                                 .as_mut()
                                 .expect("Failed to get webgpu backend!");
@@ -158,7 +158,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
                                 .as_mut()
                                 .expect("Failed to get WebGPU renderer.");
 
-                            let mut webgpu_api = graphicsapi
+                            let webgpu_api = graphicsapi
                                 .webgpu
                                 .as_mut()
                                 .expect("Failed to get webgpu backend!");
@@ -178,12 +178,12 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             }
 
             WindowEvent::Resized(size) => {
-                let mut graphicsapi = self
+                let graphicsapi = self
                     .graphicsapi
                     .as_mut()
                     .expect("Failed to get graphicsapi");
 
-                let mut webgpu = graphicsapi
+                let webgpu = graphicsapi
                     .webgpu
                     .as_mut()
                     .expect("Failed to get webgpu backend!");
