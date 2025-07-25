@@ -1,4 +1,4 @@
-use myoncore::{renderer::Renderer, AppHandler, Backend, Engine, EngineConfig};
+use myoncore::{AppHandler, Backend, Engine, EngineConfig, renderer::Renderer};
 use winit::{
     event::WindowEvent,
     event_loop::{ActiveEventLoop, EventLoop},
@@ -47,7 +47,7 @@ impl AppHandler for Sandbox {
                 };
 
                 {
-                    let mut render_pass = encoder.begin_render_pass(&render_pass_descriptor);
+                    let render_pass = encoder.begin_render_pass(&render_pass_descriptor);
                 }
             }
 
