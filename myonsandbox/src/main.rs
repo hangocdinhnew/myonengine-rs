@@ -1,4 +1,4 @@
-use myoncore::{AppHandler, Backend, Engine, EngineConfig, renderer::Renderer};
+use myoncore::{renderer::Renderer, AppHandler, Engine, EngineConfig};
 use winit::{
     event::WindowEvent,
     event_loop::{ActiveEventLoop, EventLoop},
@@ -11,47 +11,36 @@ impl AppHandler for Sandbox {
 
     fn on_update(&mut self) {}
 
-    fn on_render(&mut self, renderer: &mut Renderer, backend: Backend) {
-        match backend {
-            Backend::WebGPU => {
-                let webgpu = renderer
-                    .webgpu
-                    .as_mut()
-                    .expect("Failed to get WebGPU renderer");
+    fn on_render(&mut self, renderer: &mut Renderer) {
+        let texture_view = renderer.texture_view.as_ref().expect("TextureView missing");
+        let encoder = renderer
+            .command_encoder
+            .as_mut()
+            .expect("CommandEncoder missing");
 
-                let texture_view = webgpu.texture_view.as_ref().expect("TextureView missing");
-                let encoder = webgpu
-                    .command_encoder
-                    .as_mut()
-                    .expect("CommandEncoder missing");
+        let render_pass_descriptor = wgpu::RenderPassDescriptor {
+            label: None,
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: texture_view,
+                resolve_target: None,
+                depth_slice: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                        r: 1.0,
+                        g: 1.0,
+                        b: 1.0,
+                        a: 1.0,
+                    }),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            occlusion_query_set: None,
+            timestamp_writes: None,
+        };
 
-                let render_pass_descriptor = wgpu::RenderPassDescriptor {
-                    label: None,
-                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: texture_view,
-                        resolve_target: None,
-                        depth_slice: None,
-                        ops: wgpu::Operations {
-                            load: wgpu::LoadOp::Clear(wgpu::Color {
-                                r: 1.0,
-                                g: 1.0,
-                                b: 1.0,
-                                a: 1.0,
-                            }),
-                            store: wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                    occlusion_query_set: None,
-                    timestamp_writes: None,
-                };
-
-                {
-                    let render_pass = encoder.begin_render_pass(&render_pass_descriptor);
-                }
-            }
-
-            _ => panic!("Unknown backend!"),
+        {
+            let render_pass = encoder.begin_render_pass(&render_pass_descriptor);
         }
     }
 }
