@@ -5,7 +5,8 @@ use winit::{
 };
 
 use crate::{
-    graphics::Graphics, gui::Gui, logger::Logger, renderer::Renderer, window::WindowSystem,
+    graphics::Graphics, gui::Gui, logger::Logger, renderer::Renderer, utils::FrameTimer,
+    window::WindowSystem,
 };
 
 #[derive(Default)]
@@ -37,6 +38,7 @@ pub trait AppHandler {
 #[derive(Default)]
 pub struct Engine<A: AppHandler> {
     config: EngineConfig,
+    frame_timer: FrameTimer,
     logger: Logger,
     windowsys: Option<WindowSystem>,
     graphics: Option<Graphics>,
@@ -47,10 +49,12 @@ pub struct Engine<A: AppHandler> {
 
 impl<A: AppHandler> Engine<A> {
     pub fn new(config: EngineConfig, app: A) -> Self {
+        let frame_timer = FrameTimer::new();
         let logger = Logger::new();
 
         Self {
             config,
+            frame_timer,
             logger,
             windowsys: None,
             graphics: None,
@@ -117,6 +121,8 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
         let renderer = self.renderer.as_mut().expect("Failed to get renderer");
         let gui = self.gui.as_mut().expect("Failed to get GUI");
 
+        self.frame_timer.update();
+
         gui.handle_event(windowsys.window.clone(), &event);
 
         match event {
@@ -145,6 +151,13 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
                 self.app.on_render(renderer);
 
                 gui.begin_frame(windowsys.window.as_ref());
+
+                #[cfg(debug_assertions)]
+                {
+                    egui::Window::new("Debug").show(&gui.ctx, |ui| {
+                        ui.label(format!("FPS: {:.2}", &self.frame_timer.fps));
+                    });
+                }
 
                 self.app.on_gui(&gui.ctx);
 
