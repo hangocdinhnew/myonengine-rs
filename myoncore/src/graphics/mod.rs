@@ -18,8 +18,8 @@ pub struct Graphics {
     pub surface: WebGPUSurface,
     pub adapter: WebGPUAdapter,
     pub device: WebGPUDevice,
+    pub surface_format: Option<TextureFormat>,
     surface_caps: Option<SurfaceCapabilities>,
-    surface_format: Option<TextureFormat>,
     surface_config: Option<SurfaceConfiguration>,
 }
 

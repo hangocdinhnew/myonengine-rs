@@ -1,3 +1,4 @@
+use egui::Context;
 use myoncore::{renderer::Renderer, AppHandler, Engine, EngineConfig};
 use winit::{
     event::WindowEvent,
@@ -23,7 +24,6 @@ impl AppHandler for Sandbox {
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: texture_view,
                 resolve_target: None,
-                depth_slice: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
                         r: 1.0,
@@ -42,6 +42,15 @@ impl AppHandler for Sandbox {
         {
             let render_pass = encoder.begin_render_pass(&render_pass_descriptor);
         }
+    }
+
+    fn on_gui(&mut self, ctx: &Context) {
+        egui::Window::new("Debug Panel").show(ctx, |ui| {
+            ui.label("Hello from egui!");
+            if ui.button("Click me").clicked() {
+                println!("Button clicked!");
+            }
+        });
     }
 }
 

@@ -10,3 +10,5 @@ myoncore.workspace = true
 tracing.workspace = true
 winit.workspace = true
 wgpu.workspace = true
+
+egui.workspace = true

@@ -1,9 +1,12 @@
+use egui::Context;
 use winit::{
     application::ApplicationHandler, dpi::LogicalSize, event::WindowEvent,
     event_loop::ActiveEventLoop, window::WindowAttributes,
 };
 
-use crate::{graphics::Graphics, logger::Logger, renderer::Renderer, window::WindowSystem};
+use crate::{
+    graphics::Graphics, gui::Gui, logger::Logger, renderer::Renderer, window::WindowSystem,
+};
 
 #[derive(Default)]
 pub struct EngineConfig {
@@ -28,6 +31,7 @@ pub trait AppHandler {
     fn on_event(&mut self, event_loop: &ActiveEventLoop, event: &WindowEvent);
     fn on_update(&mut self);
     fn on_render(&mut self, renderer: &mut Renderer);
+    fn on_gui(&mut self, ctx: &Context);
 }
 
 #[derive(Default)]
@@ -37,6 +41,7 @@ pub struct Engine<A: AppHandler> {
     windowsys: Option<WindowSystem>,
     graphics: Option<Graphics>,
     renderer: Option<Renderer>,
+    gui: Option<Gui>,
     app: A,
 }
 
@@ -50,6 +55,7 @@ impl<A: AppHandler> Engine<A> {
             windowsys: None,
             graphics: None,
             renderer: None,
+            gui: None,
             app,
         }
     }
@@ -73,9 +79,7 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             .window
             .clone();
 
-        let mut graphics = Graphics::new(
-            window.clone()
-        );
+        let mut graphics = Graphics::new(window.clone());
 
         let size = window.inner_size();
         let width = size.width;
@@ -90,6 +94,15 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
         self.renderer = Some(renderer);
         tracing::info!("Renderer created!");
 
+        let gui = Gui::new(
+            window,
+            self.graphics
+                .as_ref()
+                .expect("Failed to acquire GraphicsAPI!"),
+        );
+        self.gui = Some(gui);
+        tracing::info!("Created GUI!");
+
         self.app.on_update();
     }
 
@@ -99,6 +112,13 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
         _id: winit::window::WindowId,
         event: WindowEvent,
     ) {
+        let windowsys = self.windowsys.as_mut().expect("Failed to get windowsys");
+        let graphics = self.graphics.as_mut().expect("Failed to get graphicsapi");
+        let renderer = self.renderer.as_mut().expect("Failed to get renderer");
+        let gui = self.gui.as_mut().expect("Failed to get GUI");
+
+        gui.handle_event(windowsys.window.clone(), &event);
+
         match event {
             WindowEvent::CloseRequested => {
                 tracing::info!("Closing...");
@@ -106,27 +126,15 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
             }
 
             WindowEvent::RedrawRequested => {
-                let graphics = self.graphics.as_mut().expect("Failed to get graphicsapi");
-                let renderer = self.renderer.as_mut().expect("Failed to get renderer");
-
                 match renderer.begin_frame(graphics) {
                     Ok(_) => {}
 
                     Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                        let size = self
-                            .windowsys
-                            .as_ref()
-                            .expect("Failed to get windowsys")
-                            .window
-                            .inner_size();
+                        let size = windowsys.window.inner_size();
 
                         graphics.resize(size.width, size.height);
 
-                        self.windowsys
-                            .as_ref()
-                            .expect("Failed to get windowsys")
-                            .window
-                            .request_redraw();
+                        windowsys.window.request_redraw();
                     }
 
                     Err(e) => {
@@ -136,25 +144,20 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
 
                 self.app.on_render(renderer);
 
+                gui.begin_frame(windowsys.window.as_ref());
+
+                self.app.on_gui(&gui.ctx);
+
+                gui.end_frame(windowsys.window.as_ref(), graphics, renderer);
                 renderer.end_frame(graphics);
 
-                self.windowsys
-                    .as_ref()
-                    .expect("Failed to get windowsys")
-                    .window
-                    .request_redraw();
+                windowsys.window.request_redraw();
             }
 
             WindowEvent::Resized(size) => {
-                let graphics = self.graphics.as_mut().expect("Failed to get graphicsapi");
-
                 graphics.resize(size.width, size.height);
 
-                self.windowsys
-                    .as_ref()
-                    .expect("Failed to get windowsys")
-                    .window
-                    .request_redraw();
+                windowsys.window.request_redraw();
             }
 
             _ => {}

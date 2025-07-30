@@ -12,7 +12,7 @@ impl WebGPUDevice {
         let descriptor = wgpu::DeviceDescriptor {
             label: None,
             required_features: wgpu::Features::empty(),
-            required_limits: wgpu::Limits::defaults(),
+            required_limits: wgpu::Limits::default(),
             memory_hints: Default::default(),
             trace: wgpu::Trace::Off,
         };
