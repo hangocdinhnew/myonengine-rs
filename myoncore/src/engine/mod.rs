@@ -191,16 +191,16 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
                 match graphicsapi.backend {
                     Backend::WebGPU => {
                         webgpu.resize(size.width, size.height);
-
-                        self.windowsys
-                            .as_ref()
-                            .expect("Failed to get windowsys")
-                            .window
-                            .request_redraw();
                     }
 
                     _ => {}
                 }
+
+                self.windowsys
+                    .as_ref()
+                    .expect("Failed to get windowsys")
+                    .window
+                    .request_redraw();
             }
 
             _ => {}
