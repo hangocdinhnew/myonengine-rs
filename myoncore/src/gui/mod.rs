@@ -43,8 +43,8 @@ impl Gui {
         }
     }
 
-    pub fn handle_event(&mut self, window: Arc<Window>, event: &winit::event::WindowEvent) {
-        let _ = self.state.on_window_event(window.as_ref(), event);
+    pub fn handle_event(&mut self, window: &Window, event: &winit::event::WindowEvent) {
+        let _ = self.state.on_window_event(window, event);
     }
 
     pub fn begin_frame(&mut self, window: &Window) {

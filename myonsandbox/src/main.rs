@@ -1,11 +1,14 @@
 use egui::Context;
-use myoncore::{renderer::Renderer, AppHandler, Engine, EngineConfig};
+use myoncore::{renderer::Renderer, utils::FrameTimer, AppHandler, Engine, EngineConfig};
 use winit::{
     event::WindowEvent,
     event_loop::{ActiveEventLoop, EventLoop},
+    window::Window,
 };
 
-struct Sandbox;
+struct Sandbox {
+    show_fps: bool,
+}
 
 impl AppHandler for Sandbox {
     fn on_event(&mut self, event_loop: &ActiveEventLoop, event: &WindowEvent) {}
@@ -44,20 +47,52 @@ impl AppHandler for Sandbox {
         }
     }
 
-    fn on_gui(&mut self, ctx: &Context) {
-        egui::Window::new("Debug Panel").show(ctx, |ui| {
-            ui.label("Hello from egui!");
-            if ui.button("Click me").clicked() {
-                println!("Button clicked!");
-            }
+    fn on_gui(
+        &mut self,
+        ctx: &mut Context,
+        frametimer: &FrameTimer,
+        window: &Window,
+        event_loop: &ActiveEventLoop,
+    ) {
+        egui::TopBottomPanel::top("debug_bar").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.menu_button("File", |ui| {
+                    if ui.button("Exit").clicked() {
+                        event_loop.exit();
+                    }
+                });
+
+                #[cfg(debug_assertions)]
+                ui.menu_button("View", |ui| {
+                    if ui.button("Show FPS").clicked() {
+                        self.show_fps = !self.show_fps;
+                        ui.close();
+                    }
+                })
+            });
         });
+
+        if self.show_fps {
+            egui::Window::new("FPS + Deltatime")
+                .open(&mut self.show_fps)
+                .resizable(true)
+                .show(ctx, |ui| {
+                    ui.label(format!("FPS: {:.2}", frametimer.fps));
+                    ui.label(format!("Deltatime: {:.8}", frametimer.delta_time));
+                });
+        }
     }
 }
 
 fn main() -> anyhow::Result<()> {
     let event_loop = EventLoop::new()?;
-    let engineconfig = EngineConfig::new(String::from("MyonSandbox"), 800, 600, true);
-    let mut engine = Engine::new(engineconfig, Sandbox);
+    let engineconfig = EngineConfig::new()
+        .title(String::from("MyonSandbox"))
+        .width(800)
+        .height(600)
+        .resizable(true);
+
+    let mut engine = Engine::new(engineconfig, Sandbox { show_fps: false });
     event_loop.run_app(&mut engine)?;
 
     Ok(())
