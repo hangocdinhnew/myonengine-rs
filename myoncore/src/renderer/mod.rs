@@ -20,7 +20,7 @@ impl Renderer {
     }
 
     pub fn begin_frame(&mut self, graphics: &mut Graphics) -> Result<(), wgpu::SurfaceError> {
-        self.surface_texture = Some(graphics.surface.surface.get_current_texture()?);
+        self.surface_texture = Some(graphics.surface.get_current_texture()?);
 
         self.texture_view = Some(
             self.surface_texture
@@ -33,7 +33,6 @@ impl Renderer {
         self.command_encoder = Some(
             graphics
                 .device
-                .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None }),
         );
 
@@ -41,7 +40,7 @@ impl Renderer {
     }
 
     pub fn end_frame(&mut self, graphics: &mut Graphics) {
-        graphics.device.queue.submit(iter::once(
+        graphics.queue.submit(iter::once(
             self.command_encoder
                 .take()
                 .expect("Failed to submit command encoder.")

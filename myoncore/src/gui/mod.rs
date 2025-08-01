@@ -34,7 +34,7 @@ impl Gui {
             .surface_format
             .expect("Failed to get surface_format!");
 
-        let renderer = EguiRenderer::new(&graphics.device.device, surface_format, None, 1, false);
+        let renderer = EguiRenderer::new(&graphics.device, surface_format, None, 1, false);
 
         Self {
             ctx,
@@ -75,16 +75,16 @@ impl Gui {
 
         for (id, image_delta) in &full_output.textures_delta.set {
             self.renderer.update_texture(
-                &graphics.device.device,
-                &graphics.device.queue,
+                &graphics.device,
+                &graphics.queue,
                 *id,
                 image_delta,
             );
         }
 
         self.renderer.update_buffers(
-            &graphics.device.device,
-            &graphics.device.queue,
+            &graphics.device,
+            &graphics.queue,
             encoder,
             &paint_jobs,
             &screen_descriptor,
