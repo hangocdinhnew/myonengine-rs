@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use wgpu::{
     Adapter, Device, Instance, Queue, Surface, SurfaceCapabilities, SurfaceConfiguration,
     TextureFormat,
@@ -70,57 +68,59 @@ impl Graphics {
         );
     }
 
-    pub fn new(window: Arc<Window>) -> Self {
-        tracing::info!("Creating WebGPU backend...");
+    pub unsafe fn new(window: *const Window) -> Self {
+	unsafe {
+            tracing::info!("Creating WebGPU backend...");
 
-        tracing::debug!("Creating Instance...");
+            tracing::debug!("Creating Instance...");
 
-        let instancedescriptor = wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::PRIMARY,
-            ..Default::default()
-        };
+            let instancedescriptor = wgpu::InstanceDescriptor {
+		backends: wgpu::Backends::PRIMARY,
+		..Default::default()
+            };
 
-        let instance = Instance::new(&instancedescriptor);
+            let instance = Instance::new(&instancedescriptor);
 
-        tracing::debug!("Creating surface...");
+            tracing::debug!("Creating surface...");
 
-        let surface = instance
-            .create_surface(window)
-            .expect("Failed to create surface!");
+            let surface = instance
+		.create_surface(&*window)
+		.expect("Failed to create surface!");
 
-        tracing::debug!("Requesting adapter...");
+            tracing::debug!("Requesting adapter...");
 
-        let request_adapter_options = wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::default(),
-            compatible_surface: Some(&surface),
-            force_fallback_adapter: false,
-        };
+            let request_adapter_options = wgpu::RequestAdapterOptions {
+		power_preference: wgpu::PowerPreference::default(),
+		compatible_surface: Some(&surface),
+		force_fallback_adapter: false,
+            };
 
-        let adapter = pollster::block_on(instance.request_adapter(&request_adapter_options))
-            .expect("Failed to request adapter!");
+            let adapter = pollster::block_on(instance.request_adapter(&request_adapter_options))
+		.expect("Failed to request adapter!");
 
-        tracing::debug!("Creating device...");
+            tracing::debug!("Creating device...");
 
-        let descriptor = wgpu::DeviceDescriptor {
-            label: None,
-            required_features: wgpu::Features::empty(),
-            required_limits: wgpu::Limits::default(),
-            memory_hints: Default::default(),
-            trace: wgpu::Trace::Off,
-        };
+            let descriptor = wgpu::DeviceDescriptor {
+		label: None,
+		required_features: wgpu::Features::empty(),
+		required_limits: wgpu::Limits::default(),
+		memory_hints: Default::default(),
+		trace: wgpu::Trace::Off,
+            };
 
-        let (device, queue) = pollster::block_on(adapter.request_device(&descriptor))
-            .expect("Failed to create device/queue!");
+            let (device, queue) = pollster::block_on(adapter.request_device(&descriptor))
+		.expect("Failed to create device/queue!");
 
-        Self {
-            instance,
-            surface,
-            adapter,
-            device,
-            queue,
-            surface_caps: None,
-            surface_format: None,
-            surface_config: None,
-        }
+            Self {
+		instance,
+		surface,
+		adapter,
+		device,
+		queue,
+		surface_caps: None,
+		surface_format: None,
+		surface_config: None,
+            }
+	}
     }
 }

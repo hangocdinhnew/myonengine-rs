@@ -7,6 +7,8 @@ use winit::{
     window::{Window, WindowAttributes},
 };
 
+use std::alloc::{Layout, dealloc, alloc};
+
 use crate::{
     graphics::Graphics, gui::Gui, logger::Logger, renderer::Renderer, utils::FrameTimer,
     window::WindowSystem,
@@ -76,141 +78,208 @@ pub struct Engine<A: AppHandler> {
     config: EngineConfig,
     frame_timer: FrameTimer,
     logger: Logger,
-    windowsys: Option<WindowSystem>,
-    graphics: Option<Graphics>,
-    renderer: Option<Renderer>,
-    gui: Option<Gui>,
+    windowsys: *mut WindowSystem,
+    graphics: *mut Graphics,
+    renderer: *mut Renderer,
+    gui: *mut Gui,
     app: A,
 }
 
 impl<A: AppHandler> Engine<A> {
+    pub unsafe fn unsafe_new(config: EngineConfig, app: A) -> Self {
+	unsafe {
+            let frame_timer = FrameTimer::new();
+            let logger = Logger::new();
+
+	    let windowsys_layout = Layout::new::<WindowSystem>();
+	    let windowsys = alloc(windowsys_layout) as *mut WindowSystem;
+
+	    let graphics_layout = Layout::new::<Graphics>();
+	    let graphics = alloc(graphics_layout) as *mut Graphics;
+
+	    let renderer_layout = Layout::new::<Renderer>();
+	    let renderer = alloc(renderer_layout) as *mut Renderer;
+
+	    let gui_layout = Layout::new::<Gui>();
+	    let gui = alloc(gui_layout) as *mut Gui;
+
+            Self {
+		config,
+		frame_timer,
+		logger,
+		windowsys,
+		graphics,
+		renderer,
+		gui,
+		app,
+            }
+	}
+    }
+
     pub fn new(config: EngineConfig, app: A) -> Self {
-        let frame_timer = FrameTimer::new();
-        let logger = Logger::new();
-
-        Self {
-            config,
-            frame_timer,
-            logger,
-            windowsys: None,
-            graphics: None,
-            renderer: None,
-            gui: None,
-            app,
-        }
-    }
-}
-
-impl<A: AppHandler> ApplicationHandler for Engine<A> {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let window_attributes = WindowAttributes::default()
-            .with_title(&self.config.title)
-            .with_inner_size(LogicalSize::new(self.config.width, self.config.height))
-            .with_resizable(self.config.resizable)
-            .with_decorations(!self.config.without_titlebar);
-
-        let windowsys = WindowSystem::new(window_attributes, event_loop);
-        self.windowsys = Some(windowsys);
-        tracing::info!("Window created!");
-
-        let window = self
-            .windowsys
-            .as_ref()
-            .expect("Failed to acquire windowsys")
-            .window
-            .clone();
-
-        let mut graphics = Graphics::new(window.clone());
-
-        let size = window.inner_size();
-        let width = size.width;
-        let height = size.height;
-
-        graphics.configure(width, height);
-
-        self.graphics = Some(graphics);
-        tracing::info!("Graphics API created!");
-
-        let renderer = Renderer::new();
-        self.renderer = Some(renderer);
-        tracing::info!("Renderer created!");
-
-        let gui = Gui::new(
-            window,
-            self.graphics
-                .as_ref()
-                .expect("Failed to acquire GraphicsAPI!"),
-        );
-        self.gui = Some(gui);
-        tracing::info!("Created GUI!");
-
-        self.app.on_update();
+	unsafe {
+	    Self::unsafe_new(config, app)
+	}
     }
 
-    fn window_event(
+    pub unsafe fn unsafe_resumed(&mut self, event_loop: &ActiveEventLoop) {
+	unsafe {
+            let window_attributes = WindowAttributes::default()
+		.with_title(&self.config.title)
+		.with_inner_size(LogicalSize::new(self.config.width, self.config.height))
+		.with_resizable(self.config.resizable)
+		.with_decorations(!self.config.without_titlebar);
+
+            self.windowsys.write(WindowSystem::new(window_attributes, event_loop));
+            tracing::info!("Window created!");
+
+            let window = &(*self.windowsys)
+		.window as *const Window;
+
+            let mut graphics = Graphics::new(window);
+
+            let size = (*window).inner_size();
+            let width = size.width;
+            let height = size.height;
+
+            graphics.configure(width, height);
+
+            self.graphics.write(graphics);
+            tracing::info!("Graphics API created!");
+
+            self.renderer.write(Renderer::new(self.graphics));
+            tracing::info!("Renderer created!");
+
+            let gui = Gui::new(
+		window,
+		self.graphics,
+		self.renderer,
+            );
+            self.gui.write(gui);
+            tracing::info!("Created GUI!");
+
+            self.app.on_update();
+	}
+    }
+
+    pub unsafe fn unsafe_window_event(
         &mut self,
         event_loop: &ActiveEventLoop,
         _id: winit::window::WindowId,
         event: WindowEvent,
     ) {
-        let windowsys = self.windowsys.as_mut().expect("Failed to get windowsys");
-        let graphics = self.graphics.as_mut().expect("Failed to get graphicsapi");
-        let renderer = self.renderer.as_mut().expect("Failed to get renderer");
-        let gui = self.gui.as_mut().expect("Failed to get GUI");
+	unsafe {
+            let windowsys = &mut (*self.windowsys);
+            let graphics = &mut (*self.graphics);
+            let renderer = &mut (*self.renderer);
+            let gui = &mut (*self.gui);
 
-        self.frame_timer.update();
+	    let window = &(*windowsys).window
+		as *const Window;
 
-        gui.handle_event(windowsys.window.as_ref(), &event);
+            self.frame_timer.update();
 
-        match event {
-            WindowEvent::CloseRequested => {
-                tracing::info!("Closing...");
-                event_loop.exit();
-            }
+            gui.handle_event(&event);
 
-            WindowEvent::RedrawRequested => {
-                match renderer.begin_frame(graphics) {
-                    Ok(_) => {}
+            match event {
+		WindowEvent::CloseRequested => {
+                    tracing::info!("Closing...");
+                    event_loop.exit();
+		}
 
-                    Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                        let size = windowsys.window.inner_size();
+		WindowEvent::RedrawRequested => {
+                    match renderer.begin_frame() {
+			Ok(_) => {}
 
-                        graphics.resize(size.width, size.height);
+			Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                            let size = windowsys.window.inner_size();
 
-                        windowsys.window.request_redraw();
+                            graphics.resize(size.width, size.height);
+
+                            windowsys.window.request_redraw();
+			}
+
+			Err(e) => {
+                            panic!("Unable to render, reason: {e}")
+			}
                     }
 
-                    Err(e) => {
-                        panic!("Unable to render, reason: {e}")
-                    }
-                }
+                    self.app.on_render(renderer);
 
-                self.app.on_render(renderer);
+                    gui.begin_frame();
 
-                gui.begin_frame(windowsys.window.as_ref());
+                    self.app.on_gui(
+			&mut gui.ctx,
+			&self.frame_timer,
+			&*window,
+			event_loop,
+                    );
 
-                self.app.on_gui(
-                    &mut gui.ctx,
-                    &self.frame_timer,
-                    windowsys.window.as_ref(),
-                    event_loop,
-                );
+                    gui.end_frame();
+                    renderer.end_frame();
 
-                gui.end_frame(windowsys.window.as_ref(), graphics, renderer);
-                renderer.end_frame(graphics);
+                    windowsys.window.request_redraw();
+		}
 
-                windowsys.window.request_redraw();
+		WindowEvent::Resized(size) => {
+                    graphics.resize(size.width, size.height);
+
+                    windowsys.window.request_redraw();
+		}
+
+		_ => {}
             }
 
-            WindowEvent::Resized(size) => {
-                graphics.resize(size.width, size.height);
+            self.app.on_event(event_loop, &event);
+	}
+    }
+}
 
-                windowsys.window.request_redraw();
+impl<A: AppHandler> ApplicationHandler for Engine<A> {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+	unsafe {
+	    self.unsafe_resumed(event_loop);
+	}
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        id: winit::window::WindowId,
+        event: WindowEvent,
+    ) {
+	unsafe {
+	    self.unsafe_window_event(event_loop, id, event);
+	}
+    }
+}
+
+impl<A: AppHandler> Drop for Engine<A> {
+    fn drop(&mut self) {
+	unsafe {
+            if !self.windowsys.is_null() {
+                self.windowsys.drop_in_place();
+                let layout = Layout::new::<WindowSystem>();
+                dealloc(self.windowsys as *mut u8, layout);
             }
 
-            _ => {}
-        }
+            if !self.graphics.is_null() {
+                self.graphics.drop_in_place();
+                let layout = Layout::new::<Graphics>();
+                dealloc(self.graphics as *mut u8, layout);
+            }
 
-        self.app.on_event(event_loop, &event);
+            if !self.renderer.is_null() {
+                self.renderer.drop_in_place();
+                let layout = Layout::new::<Renderer>();
+                dealloc(self.renderer as *mut u8, layout);
+            }
+
+            if !self.gui.is_null() {
+                self.gui.drop_in_place();
+                let layout = Layout::new::<Gui>();
+                dealloc(self.gui as *mut u8, layout);
+            }
+	}
     }
 }
