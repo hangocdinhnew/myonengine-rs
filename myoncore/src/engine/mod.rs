@@ -7,7 +7,7 @@ use winit::{
     window::{Window, WindowAttributes},
 };
 
-use std::alloc::{Layout, dealloc, alloc};
+use std::ptr;
 
 use crate::{
     graphics::Graphics, gui::Gui, logger::Logger, renderer::Renderer, utils::FrameTimer,
@@ -86,40 +86,20 @@ pub struct Engine<A: AppHandler> {
 }
 
 impl<A: AppHandler> Engine<A> {
-    pub unsafe fn unsafe_new(config: EngineConfig, app: A) -> Self {
-	unsafe {
-            let frame_timer = FrameTimer::new();
-            let logger = Logger::new();
-
-	    let windowsys_layout = Layout::new::<WindowSystem>();
-	    let windowsys = alloc(windowsys_layout) as *mut WindowSystem;
-
-	    let graphics_layout = Layout::new::<Graphics>();
-	    let graphics = alloc(graphics_layout) as *mut Graphics;
-
-	    let renderer_layout = Layout::new::<Renderer>();
-	    let renderer = alloc(renderer_layout) as *mut Renderer;
-
-	    let gui_layout = Layout::new::<Gui>();
-	    let gui = alloc(gui_layout) as *mut Gui;
-
-            Self {
-		config,
-		frame_timer,
-		logger,
-		windowsys,
-		graphics,
-		renderer,
-		gui,
-		app,
-            }
-	}
-    }
-
     pub fn new(config: EngineConfig, app: A) -> Self {
-	unsafe {
-	    Self::unsafe_new(config, app)
-	}
+        let frame_timer = FrameTimer::new();
+        let logger = Logger::new();
+
+        Self {
+	    config,
+	    frame_timer,
+	    logger,
+	    windowsys: ptr::null_mut(),
+	    graphics: ptr::null_mut(),
+	    renderer: ptr::null_mut(),
+	    gui: ptr::null_mut(),
+	    app,
+        }
     }
 
     pub unsafe fn unsafe_resumed(&mut self, event_loop: &ActiveEventLoop) {
@@ -130,7 +110,8 @@ impl<A: AppHandler> Engine<A> {
 		.with_resizable(self.config.resizable)
 		.with_decorations(!self.config.without_titlebar);
 
-            self.windowsys.write(WindowSystem::new(window_attributes, event_loop));
+            let windowsys_box = Box::new(WindowSystem::new(window_attributes, event_loop));
+	    self.windowsys = Box::into_raw(windowsys_box) as *mut WindowSystem;
             tracing::info!("Window created!");
 
             let window = &(*self.windowsys)
@@ -144,18 +125,20 @@ impl<A: AppHandler> Engine<A> {
 
             graphics.configure(width, height);
 
-            self.graphics.write(graphics);
+	    let graphics_box = Box::new(graphics);
+	    self.graphics = Box::into_raw(graphics_box) as *mut Graphics;
             tracing::info!("Graphics API created!");
 
-            self.renderer.write(Renderer::new(self.graphics));
+            let renderer_box = Box::new(Renderer::new(self.graphics));
+	    self.renderer = Box::into_raw(renderer_box) as *mut Renderer;
             tracing::info!("Renderer created!");
 
-            let gui = Gui::new(
+            let gui_box = Box::new(Gui::new(
 		window,
 		self.graphics,
 		self.renderer,
-            );
-            self.gui.write(gui);
+            ));
+	    self.gui = Box::into_raw(gui_box) as *mut Gui;
             tracing::info!("Created GUI!");
 
             self.app.on_update();
@@ -257,29 +240,10 @@ impl<A: AppHandler> ApplicationHandler for Engine<A> {
 impl<A: AppHandler> Drop for Engine<A> {
     fn drop(&mut self) {
 	unsafe {
-            if !self.windowsys.is_null() {
-                self.windowsys.drop_in_place();
-                let layout = Layout::new::<WindowSystem>();
-                dealloc(self.windowsys as *mut u8, layout);
-            }
-
-            if !self.graphics.is_null() {
-                self.graphics.drop_in_place();
-                let layout = Layout::new::<Graphics>();
-                dealloc(self.graphics as *mut u8, layout);
-            }
-
-            if !self.renderer.is_null() {
-                self.renderer.drop_in_place();
-                let layout = Layout::new::<Renderer>();
-                dealloc(self.renderer as *mut u8, layout);
-            }
-
-            if !self.gui.is_null() {
-                self.gui.drop_in_place();
-                let layout = Layout::new::<Gui>();
-                dealloc(self.gui as *mut u8, layout);
-            }
+	    let _ = Box::from_raw(self.windowsys);
+	    let _ = Box::from_raw(self.graphics);
+	    let _ = Box::from_raw(self.renderer);
+	    let _ = Box::from_raw(self.gui);
 	}
     }
 }
