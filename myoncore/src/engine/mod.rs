@@ -73,7 +73,6 @@ pub trait AppHandler {
     );
 }
 
-#[derive(Default)]
 pub struct Engine<A: AppHandler> {
     config: EngineConfig,
     frame_timer: FrameTimer,
